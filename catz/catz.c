@@ -13,6 +13,13 @@ int is_dir(const char *path) {
 }
 
 
+int is_ignore(const char *path) {
+    if (path[0] == '.') {
+        return 1;
+    }
+    return 0;
+}
+
 int is_regf(const char *path) {
     struct stat stat_buffer;
     stat(path, &stat_buffer);
@@ -56,9 +63,14 @@ int main(int argc, char* argv[]) {
     for (int i = 1; i < argc; i++) {
 
         current_path = argv[i];
+        
+
+        if (is_ignore(current_path)) {
+            continue;
+        }
 
         //check if it's a file or a dir
-        if (is_dir(current_path)) {
+        else if (is_dir(current_path)) {
 
             // pointer for directory entry
             struct dirent *de;
@@ -73,10 +85,12 @@ int main(int argc, char* argv[]) {
             char *current_sub_path;
             size_t sub_path_len;
             while ((de = readdir(dp)) != NULL) {
-                if (strcmp(de->d_name, ".") == 0 ||
-                        strcmp(de->d_name, "..") == 0) {
-                    continue;
-                }
+                // if (strcmp(de->d_name, ".") == 0 ||
+                //         strcmp(de->d_name, "..") == 0) {
+                //     continue;
+                //
+                    if (is_ignore(de->d_name)) continue;
+                
                 
                 sub_path_len = strlen(current_path) + strlen(de->d_name) + 2;
                 snprintf(current_sub_path, sub_path_len, "%s/%s", current_path, de->d_name);
