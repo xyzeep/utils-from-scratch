@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <dirent.h>
 
 #define BUFFER_SIZE 4096
 
@@ -9,6 +10,14 @@ int is_dir(const char *path) {
     stat(path, &stat_buffer);
 
     return S_ISDIR(stat_buffer.st_mode);
+}
+
+
+int is_regf(const char *path) {
+    struct stat stat_buffer;
+    stat(path, &stat_buffer);
+
+    return S_ISREG(stat_buffer.st_mode);
 }
 
 
@@ -50,10 +59,37 @@ int main(int argc, char* argv[]) {
 
         //check if it's a file or a dir
         if (is_dir(current_path)) {
-            // TODO: run catz() on every file inside it.
-            printf("TODO: run catz() on every file inside it");
+
+            // pointer for directory entry
+            struct dirent *de;
+
+            DIR *dp = opendir(current_path);
+
+            if (dp == NULL) {
+                printf("Couldn't open %s", current_path);
+                return 1;
+            }
+
+            char *current_sub_path;
+            size_t sub_path_len;
+            while ((de = readdir(dp)) != NULL) {
+                if (strcmp(de->d_name, ".") == 0 ||
+                        strcmp(de->d_name, "..") == 0) {
+                    continue;
+                }
+                
+                sub_path_len = strlen(current_path) + strlen(de->d_name) + 2;
+                snprintf(current_sub_path, sub_path_len, "%s/%s", current_path, de->d_name);
+
+                if (!is_dir(current_sub_path)) {
+                        catz(current_sub_path);
+                }
+            }
+
+            closedir(dp);
+
         }
-        
+
         // if it's a file
         else {
             catz(current_path);
@@ -63,4 +99,3 @@ int main(int argc, char* argv[]) {
 
     return 0;
 }
-
